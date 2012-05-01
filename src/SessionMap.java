@@ -3,6 +3,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -139,35 +140,43 @@ public class SessionMap {
 	class SubMap {
 		BufferedImage image;
 		Point mapPoint;
+		HashSet<Point> blackPoints;
 
 		public SubMap(Point mapPoint, BufferedImage image) {
 			this.image = image;
 			this.mapPoint = mapPoint;
+			blackPoints = new HashSet<Point>();
+			setupBlackPoints();
+		}
+
+		private void setupBlackPoints() {
+			for (int x = 0; x < MAP_SIZE; x++) {
+				for (int y = 0; y < MAP_SIZE; y++) {
+					int rgb = image.getRGB(x, y);
+					
+					
+					//stitcher.publishToLog("("+x+","+y+") = " + rgb);
+					//stitcher.publishToLog("Type = " + image.getType());
+					
+					
+					if((rgb & 0x00FFFFFF) == 0){
+						blackPoints.add(new Point(x,y));
+					}
+				}
+			}
 		}
 
 		public boolean equals(SubMap subMap) {
-			int blackCount1 = 0, blackCount2 = 0;
-			for (int x = 0; x < MAP_SIZE; x++) {
-				for (int y = 0; y < MAP_SIZE; y++) {
-					int rbg1 = image.getRGB(x, y);
-					int rbg2 = subMap.image.getRGB(x, y);
-					
-					if(rbg1 == 0){
-						blackCount1++;
-					}
-					if(rbg2 == 0){
-						blackCount2++;
-					}
-
-					if ((rbg1 == 0) ^ (rbg2 == 0))
-						return false;
-				}
-			}
-			if(blackCount1 != 0 && blackCount2 != 0){
-				return true;
+			//stitcher.publishToLog("Comparing: " + blackPoints.size() + " == " + subMap.blackPoints.size());
+			if(blackPoints.isEmpty() || subMap.blackPoints.isEmpty())
+				return false;
+			
+			if(blackPoints.size() == subMap.blackPoints.size()){
+				return subMap.blackPoints.containsAll(blackPoints);
 			} else {
 				return false;
 			}
+				
 		}
 	}
 

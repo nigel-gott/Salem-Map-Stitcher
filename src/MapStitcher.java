@@ -40,6 +40,7 @@ public class MapStitcher extends SwingWorker<String, String> {
 		List<BufferedImage> stitchedMaps = mergeSessionMaps(sessionMaps);
 
 		for (int i = 0; i < stitchedMaps.size(); i++) {
+			publish("Writing images...");
 			String stitchedMapName = mapDirectory.getAbsolutePath() + "\\StitchedMap" + i + ".png";
 
 			try {
@@ -61,13 +62,13 @@ public class MapStitcher extends SwingWorker<String, String> {
 		do {
 			stitchedAtLeastOne = false;
 			for (int i = 0; i < maps.size(); i++) {
-				publish("Attempting to stitch two sessions.");
+				publish("Attempting to stitch two sessions. Size = " + maps.size() + " i = " + i);
 				if (sessionMap.tryMergeWith(maps.get(i))) {
 					stitchedAtLeastOne = true;
 					maps.remove(i--);
 				}
 			}
-		} while (stitchedAtLeastOne);
+		} while (stitchedAtLeastOne && maps.size() > 1);
 
 		fullyStitchedMaps.add(sessionMap.generateStitchedMap());
 
@@ -76,6 +77,7 @@ public class MapStitcher extends SwingWorker<String, String> {
 			fullyStitchedMaps.addAll(mergeSessionMaps(maps));
 		}
 
+		publish("Finished stitching...");
 		return fullyStitchedMaps;
 	}
 
