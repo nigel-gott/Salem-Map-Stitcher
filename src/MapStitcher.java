@@ -2,6 +2,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -23,28 +25,62 @@ public class MapStitcher extends SwingWorker<String, String> {
 	}
 
 	protected String doInBackground() throws Exception {
-		processImages();
+		File[] mapFolders = mapDirectory.listFiles(new MapFolderFilter());
+
+		List<SessionMap> sessionMaps = new ArrayList<SessionMap>();
+
+		for (File sessionFolder : mapFolders) {
+			SessionMap sessionMap = new SessionMap(this);
+
+			if (sessionMap.loadImagesFromDirectory(sessionFolder)) {
+				sessionMaps.add(sessionMap);
+			}
+		}
+
+		List<BufferedImage> stitchedMaps = mergeSessionMaps(sessionMaps);
+
+		for (int i = 0; i < stitchedMaps.size(); i++) {
+			String stitchedMapName = mapDirectory.getAbsolutePath() + "\\StitchedMap" + i + ".png";
+
+			try {
+				ImageIO.write(stitchedMaps.get(i), "png", new File(stitchedMapName));
+			} catch (IOException e) {
+				publish("Failed to write stitched image " + i + " to" + stitchedMapName + ".");
+			}
+		}
+
 		return null;
 	}
 
-	private void processImages() {
+	private List<BufferedImage> mergeSessionMaps(List<SessionMap> maps) {
+		List<BufferedImage> fullyStitchedMaps = new ArrayList<BufferedImage>();
 
-		File[] mapFolders = mapDirectory.listFiles(new MapFolderFilter());
+		SessionMap sessionMap = maps.remove(0);
+		boolean stitchedAtLeastOne;
 
-		for (File mapFolder : mapFolders) {
-			// Assume that the only files in the session folders are the images.
-			List<BufferedImage> sessionImages = new ArrayList<BufferedImage>();
-			for (File mapImage : mapFolder.listFiles()) {
-				try {
-					publish("Loading: " + mapImage.getAbsolutePath());
-					sessionImages.add(ImageIO.read(mapImage));
-				} catch (IOException e) {
-					publish("Failed to load " + mapImage.getAbsolutePath() + ", exiting.");
-					return;
+		do {
+			stitchedAtLeastOne = false;
+			for (int i = 0; i < maps.size(); i++) {
+				publish("Attempting to stitch two sessions.");
+				if (sessionMap.tryMergeWith(maps.get(i))) {
+					stitchedAtLeastOne = true;
+					maps.remove(i--);
 				}
 			}
-			
+		} while (stitchedAtLeastOne);
+
+		fullyStitchedMaps.add(sessionMap.generateStitchedMap());
+
+		if (!maps.isEmpty()) {
+			publish("Failed to stitch all sessions into one, creating new map and attempting to stitch remaining " + maps.size() + " sessions.");
+			fullyStitchedMaps.addAll(mergeSessionMaps(maps));
 		}
+
+		return fullyStitchedMaps;
+	}
+
+	public void publishToLog(String logLine) {
+		publish(logLine);
 	}
 
 	protected void process(List<String> logsSoFar) {
