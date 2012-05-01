@@ -1,3 +1,4 @@
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -7,28 +8,41 @@ public class FileManager {
 	private static final String HOME_DIRECTORY = System.getProperty("user.home");
 	private static final String DEFAULT_MAPS_DIRECTORY = HOME_DIRECTORY + "\\Salem\\map";
 	
-	private Path mapDirectoryPath;
-	private boolean foundMapDirectory;
-	
 	private LogManager logManager;
+	private File mapDirectory;
+	private boolean mapDirectoryFound;
 	
 	public FileManager(LogManager logManager){
 		this.logManager = logManager;
-		foundMapDirectory = false;
+		mapDirectoryFound = false;
 	}
 	
 	public String tryFindMapsDirectory(){
 		try{
-			mapDirectoryPath = Paths.get(DEFAULT_MAPS_DIRECTORY);
+			Path mapDirectoryPath = Paths.get(DEFAULT_MAPS_DIRECTORY);
 			mapDirectoryPath.toRealPath();
-			logManager.log("Successfully found Salems map directory.");
-			foundMapDirectory = true;
+			
+			setMapDirectory(mapDirectoryPath.toFile());
+			
+			logManager.append("Automatically found Salems map directory.");
 			return mapDirectoryPath.toString();
 		} catch (Exception e){
-			logManager.log("Failed to find Salems map directory.");
-			foundMapDirectory = false;
-			return "Select your Salem maps directory.";
+			logManager.append("Failed to automatically find Salems map directory.");
+			return "Select your Salem map directory.";
 		}
+	}
+
+	public void setMapDirectory(File selectedFile) {
+		mapDirectoryFound = true;
+		mapDirectory = selectedFile;
+	}
+	
+	public File getMapDirectory() {
+		return mapDirectory;
+	}
+
+	public boolean hasFoundMapDirectory() {
+		return mapDirectoryFound ? mapDirectory.exists() : false;
 	}
 
 }
