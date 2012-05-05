@@ -1,14 +1,10 @@
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.imageio.ImageIO;
 
 public class SessionMap {
 
@@ -17,7 +13,6 @@ public class SessionMap {
 
 	private int width, height, type;
 	private int maxX = 0, minX = 0, maxY = 0, minY = 0;
-	private static final int MAP_SIZE = 100;
 
 	public SessionMap(MapStitcher stitcher) {
 		this.stitcher = stitcher;
@@ -35,29 +30,27 @@ public class SessionMap {
 		for (File mapImage : directory.listFiles()) {
 			try {
 				Point mapPoint = findPointFromImageName(mapImage.getName());
-				addSubMap(new SubMap(mapPoint, ImageIO.read(mapImage)));
-			} catch (IOException e) {
-				stitcher.publishToLog("Failed to load " + mapImage.getAbsolutePath() + ".");
-				return false;
+				
+				SubMap subMap = new SubMap(mapPoint, mapImage);
+				if (subMap.setupSubMap()) {
+					addSubMap(subMap);
+				} else {
+					stitcher.publishToLog("Discarded " + mapImage.getAbsolutePath() + ".");
+					return false;
+				}
 			} catch (Exception e) {
 				stitcher.publishToLog("Encountered an invalid image name: " + mapImage.getName() + ".");
 				return false;
 			}
 		}
-
-		SubMap firstSubMap = subMaps.get(0);
-
-		type = firstSubMap.image.getType();
-
-		return true;
+		return !subMaps.isEmpty();
 	}
 
 	public BufferedImage generateStitchedMap() {
-		BufferedImage stitchedSessionMap = new BufferedImage(width, height, type);
+		BufferedImage stitchedSessionMap = new BufferedImage(width, height, 6);
 
 		for (SubMap subMap : subMaps) {
-			Point subMapPoint = subMap.mapPoint;
-			stitchedSessionMap.createGraphics().drawImage(subMap.image, null, (subMapPoint.x - minX) * MAP_SIZE, (subMapPoint.y - minY) * MAP_SIZE);
+			subMap.drawTo(stitchedSessionMap, minX, minY);
 		}
 
 		return stitchedSessionMap;
@@ -85,6 +78,7 @@ public class SessionMap {
 		for (SubMap map1 : subMaps) {
 			for (SubMap map2 : sessionMap.subMaps) {
 				if (map1.equals(map2)) {
+					stitcher.publishToLog("Hello!");
 					mergeWith(sessionMap, map1, map2);
 					return true;
 				}
@@ -99,12 +93,12 @@ public class SessionMap {
 
 		for (int i = 0; i < sessionMap.subMaps.size(); i++) {
 			SubMap subMap = sessionMap.subMaps.get(i);
-			
+
 			Point transformedPoint = new Point(subMap.mapPoint.x + dX, subMap.mapPoint.y + dY);
-			SubMap transformedSubMap = new SubMap(transformedPoint, subMap.image);
-			
+			subMap.changePoint(transformedPoint);
+
 			if (!containsSubMapAt(transformedPoint)) {
-				addSubMap(transformedSubMap);
+				addSubMap(subMap);
 			}
 		}
 
@@ -121,10 +115,10 @@ public class SessionMap {
 			minX = newPoint.x;
 		if (newPoint.y < minY)
 			minY = newPoint.y;
-		
-		width = (maxX - minX + 1) * MAP_SIZE;
-		height = (maxY - minY + 1) * MAP_SIZE;
-		
+
+		width = (maxX - minX + 1) * 100;
+		height = (maxY - minY + 1) * 100;
+
 		subMaps.add(newSubMap);
 	}
 
@@ -135,49 +129,6 @@ public class SessionMap {
 			}
 		}
 		return false;
-	}
-
-	class SubMap {
-		BufferedImage image;
-		Point mapPoint;
-		HashSet<Point> blackPoints;
-
-		public SubMap(Point mapPoint, BufferedImage image) {
-			this.image = image;
-			this.mapPoint = mapPoint;
-			blackPoints = new HashSet<Point>();
-			setupBlackPoints();
-		}
-
-		private void setupBlackPoints() {
-			for (int x = 0; x < MAP_SIZE; x++) {
-				for (int y = 0; y < MAP_SIZE; y++) {
-					int rgb = image.getRGB(x, y);
-					
-					
-					//stitcher.publishToLog("("+x+","+y+") = " + rgb);
-					//stitcher.publishToLog("Type = " + image.getType());
-					
-					
-					if((rgb & 0x00FFFFFF) == 0){
-						blackPoints.add(new Point(x,y));
-					}
-				}
-			}
-		}
-
-		public boolean equals(SubMap subMap) {
-			//stitcher.publishToLog("Comparing: " + blackPoints.size() + " == " + subMap.blackPoints.size());
-			if(blackPoints.isEmpty() || subMap.blackPoints.isEmpty())
-				return false;
-			
-			if(blackPoints.size() == subMap.blackPoints.size()){
-				return subMap.blackPoints.containsAll(blackPoints);
-			} else {
-				return false;
-			}
-				
-		}
 	}
 
 }

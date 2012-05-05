@@ -2,8 +2,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -13,13 +11,11 @@ import javax.swing.SwingWorker;
 public class MapStitcher extends SwingWorker<String, String> {
 
 	private LogManager logManager;
-	private FileManager fileManager;
 	private File mapDirectory;
 	private JButton stitchButton;
 
 	public MapStitcher(FileManager fileManager, LogManager logManager, JButton stitchButton) {
 		this.logManager = logManager;
-		this.fileManager = fileManager;
 		this.mapDirectory = fileManager.getMapDirectory();
 		this.stitchButton = stitchButton;
 	}
@@ -47,6 +43,8 @@ public class MapStitcher extends SwingWorker<String, String> {
 				ImageIO.write(stitchedMaps.get(i), "png", new File(stitchedMapName));
 			} catch (IOException e) {
 				publish("Failed to write stitched image " + i + " to" + stitchedMapName + ".");
+			} catch (Exception e){
+				publish("Failed somehow..");
 			}
 		}
 
@@ -62,22 +60,30 @@ public class MapStitcher extends SwingWorker<String, String> {
 		do {
 			stitchedAtLeastOne = false;
 			for (int i = 0; i < maps.size(); i++) {
-				publish("Attempting to stitch two sessions. Size = " + maps.size() + " i = " + i);
+			publish("Stitching two sessions... i: " + i + ", size: " + maps.size());
 				if (sessionMap.tryMergeWith(maps.get(i))) {
+					publish("Successfully merged two maps.");
 					stitchedAtLeastOne = true;
 					maps.remove(i--);
 				}
 			}
 		} while (stitchedAtLeastOne && maps.size() > 1);
+		
+		publish("Generating map.");
 
+		try{
 		fullyStitchedMaps.add(sessionMap.generateStitchedMap());
+		} catch (Exception e){
+			e.printStackTrace();
+			System.exit(1);
+		}
+		publish("Generating map2.");
 
 		if (!maps.isEmpty()) {
 			publish("Failed to stitch all sessions into one, creating new map and attempting to stitch remaining " + maps.size() + " sessions.");
 			fullyStitchedMaps.addAll(mergeSessionMaps(maps));
 		}
 
-		publish("Finished stitching...");
 		return fullyStitchedMaps;
 	}
 
@@ -93,7 +99,6 @@ public class MapStitcher extends SwingWorker<String, String> {
 
 	protected void done() {
 		logManager.append("Finished stitching...");
-		logManager.append("Saving file to " + fileManager.getMapDirectory().getAbsolutePath() + ".");
 		stitchButton.setEnabled(true);
 	}
 }
