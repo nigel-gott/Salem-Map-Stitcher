@@ -17,7 +17,7 @@ public class SessionMap {
 
 	private int width, height;
 	private int maxX = 0, minX = 0, maxY = 0, minY = 0;
-	
+
 	private Date sessionDate;
 
 	public SessionMap() {
@@ -30,27 +30,20 @@ public class SessionMap {
 			// Sometimes sessions have no maps, we just ignore them.
 			return false;
 		}
-		
+
 		try {
 			sessionDate = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss", Locale.ENGLISH).parse(directory.getName());
 		} catch (ParseException e) {
 			sessionDate = new Date(0);
 		}
-		
-		System.out.println(sessionDate.toString());
 
 		// We assume that the only files in the session folders are the map
 		// images.
 		for (File mapImage : directory.listFiles()) {
 			try {
 				Point mapPoint = findPointFromImageName(mapImage.getName());
-
 				Tile tile = new Tile(mapPoint, mapImage, sessionDate);
-				if (tile.initTile()) {
-					addTile(tile);
-				} else {
-					return false;
-				}
+				addTile(tile);
 			} catch (Exception e) {
 				return false;
 			}
@@ -100,7 +93,7 @@ public class SessionMap {
 			for (Map.Entry<Point, Tile> entry2 : sessionMap.tiles.entrySet()) {
 				Tile tile1 = entry1.getValue();
 				Tile tile2 = entry2.getValue();
-				
+
 				if (tile1.equals(tile2)) {
 					stitchWith(sessionMap, tile1, tile2);
 					return true;
@@ -114,7 +107,7 @@ public class SessionMap {
 		int dX = map1.point.x - map2.point.x;
 		int dY = map1.point.y - map2.point.y;
 
-		for(Map.Entry<Point, Tile> entry : sessionMap.tiles.entrySet()){
+		for (Map.Entry<Point, Tile> entry : sessionMap.tiles.entrySet()) {
 			Tile tile = entry.getValue();
 
 			Point transformedPoint = new Point(tile.point.x + dX, tile.point.y + dY);
@@ -122,7 +115,7 @@ public class SessionMap {
 
 			if (!tiles.containsKey(transformedPoint)) {
 				addTile(tile);
-			} else if(sessionMap.sessionDate.after(sessionDate)){
+			} else if (sessionMap.sessionDate.after(sessionDate)) {
 				tiles.remove(transformedPoint);
 				addTile(tile);
 			}

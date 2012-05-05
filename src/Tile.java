@@ -32,12 +32,6 @@ class Tile {
 		}
 	}
 
-	public boolean initTile() {
-		HashSet<Point> blackPoints = findAllBlackPoints();
-		numBlackPoints = blackPoints.size();
-		return numBlackPoints != 0;
-	}
-
 	private HashSet<Point> findAllBlackPoints() {
 		HashSet<Point> blackPoints = new HashSet<Point>();
 		try {
