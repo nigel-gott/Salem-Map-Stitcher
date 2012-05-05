@@ -42,13 +42,17 @@ public class FileManager {
 	public boolean hasFoundMapDirectory() {
 		return mapDirectoryFound ? mapDirectory.exists() : false;
 	}
-
-	public File[] getSessionDirectories() {
-		return mapDirectory.listFiles(new MapFolderFilter());
+	 
+	public File getMapDirectory(){
+		return mapDirectory;
 	}
 
-	public boolean tryWriteImage(BufferedImage image, String name) {
-		String imageName = mapDirectory.getAbsolutePath() + "\\" + name + ".png";
+	public static File[] getSessionDirectories(File directory) {
+		return directory.listFiles(new MapFolderFilter());
+	}
+
+	public static boolean tryWriteImage(File directory, BufferedImage image, String name) {
+		String imageName = directory.getAbsolutePath() + "\\" + name + ".png";
 
 		try {
 			ImageIO.write(image, "png", new File(imageName));

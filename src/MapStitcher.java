@@ -6,15 +6,13 @@ import java.util.List;
 public class MapStitcher{
 
 	private Logger logger;
-	private FileManager fileManager;
 
-	public MapStitcher(FileManager fileManager, Logger logger) {
-		this.fileManager = fileManager;
+	public MapStitcher(Logger logger) {
 		this.logger = logger;
 	}
 
-	public void stitchMaps(){
-		File[] sessionDirectories = fileManager.getSessionDirectories();
+	public void stitchMaps(File mapDirectory){
+		File[] sessionDirectories = FileManager.getSessionDirectories(mapDirectory);
 		List<SessionMap> sessionMaps = new ArrayList<SessionMap>();
 
 		for (File sessionFolder : sessionDirectories) {
@@ -32,7 +30,7 @@ public class MapStitcher{
 
 		for (int i = 0; i < stitchedMaps.size(); i++) {
 			String imageName = "StitchedMap" + i;
-			if(fileManager.tryWriteImage(stitchedMaps.get(i), imageName)){
+			if(FileManager.tryWriteImage(mapDirectory, stitchedMaps.get(i), imageName)){
 				logger.log("Successfully wrote " + imageName + " to file." );
 			} else {
 				logger.log("Failed to write " + imageName + " to file." );
