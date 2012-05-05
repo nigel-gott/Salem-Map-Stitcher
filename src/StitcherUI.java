@@ -59,7 +59,7 @@ public class StitcherUI extends JPanel implements ActionListener {
 
 		directoryField = new JTextField(20);
 		directoryField.setMargin(new Insets(5, 5, 5, 5));
-		directoryField.setEditable(true);
+		directoryField.setEditable(false);
 
 		JPanel directoryPanel = new JPanel();
 		directoryPanel.add(directoryButton, BorderLayout.WEST);
@@ -72,9 +72,8 @@ public class StitcherUI extends JPanel implements ActionListener {
 	public void actionPerformed(ActionEvent event) {
 		if (event.getSource() == stitchButton) {
 			if (fileManager.hasFoundMapDirectory()) {
-				stitchButton.setEnabled(false);
-				logManager.append("Stitching...");
-				(new MapStitcher(fileManager, logManager, stitchButton)).execute();
+				setButtonStatus(false);
+				(new MapStitcher(fileManager, logManager, this)).execute();
 			} else {
 				logManager.append("Error saving to the selected map directory.");
 			}
@@ -90,6 +89,11 @@ public class StitcherUI extends JPanel implements ActionListener {
 				directoryField.setText(mapDirectory.getAbsolutePath());
 			}
 		}
+	}
+
+	protected void setButtonStatus(boolean value) {
+		stitchButton.setEnabled(value);
+		directoryButton.setEnabled(value);
 	}
 
 	public static void createAndShowGUI() {

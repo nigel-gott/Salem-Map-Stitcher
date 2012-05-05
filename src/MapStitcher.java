@@ -1,53 +1,47 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-import javax.swing.JButton;
 import javax.swing.SwingWorker;
 
 public class MapStitcher extends SwingWorker<String, String> {
 
 	private LogManager logManager;
-	private File mapDirectory;
-	private JButton stitchButton;
+	private FileManager fileManager;
+	private StitcherUI ui;
 
-	public MapStitcher(FileManager fileManager, LogManager logManager, JButton stitchButton) {
+	public MapStitcher(FileManager fileManager, LogManager logManager, StitcherUI ui) {
+		this.fileManager = fileManager;
 		this.logManager = logManager;
-		this.mapDirectory = fileManager.getMapDirectory();
-		this.stitchButton = stitchButton;
+		this.ui = ui;
 	}
 
 	protected String doInBackground() throws Exception {
-		File[] mapFolders = mapDirectory.listFiles(new MapFolderFilter());
-
+		publish("Starting to stitch...");
+		File[] sessionDirectories = fileManager.getSessionDirectories();
 		List<SessionMap> sessionMaps = new ArrayList<SessionMap>();
 
-		for (File sessionFolder : mapFolders) {
+		for (File sessionFolder : sessionDirectories) {
 			SessionMap sessionMap = new SessionMap(this);
 
-			if (sessionMap.loadImagesFromDirectory(sessionFolder)) {
+			if (sessionMap.tryLoadTilesFrom(sessionFolder)) {
 				sessionMaps.add(sessionMap);
 			}
 		}
 
 		List<BufferedImage> stitchedMaps = mergeSessionMaps(sessionMaps);
 
+		publish("Writing images...");
 		for (int i = 0; i < stitchedMaps.size(); i++) {
-			publish("Writing images...");
-			String stitchedMapName = mapDirectory.getAbsolutePath() + "\\StitchedMap" + i + ".png";
-
-			try {
-				ImageIO.write(stitchedMaps.get(i), "png", new File(stitchedMapName));
-			} catch (IOException e) {
-				publish("Failed to write stitched image " + i + " to" + stitchedMapName + ".");
-			} catch (Exception e){
-				publish("Failed somehow..");
+			String imageName = "StitchedMap" + i;
+			if(fileManager.tryWriteImage(stitchedMaps.get(i), imageName)){
+				publish("Successfully written " + imageName + " to file.");
+			} else {
+				publish("Failed to write " + imageName + " to file.");
 			}
+			
 		}
-
 		return null;
 	}
 
@@ -99,6 +93,6 @@ public class MapStitcher extends SwingWorker<String, String> {
 
 	protected void done() {
 		logManager.append("Finished stitching...");
-		stitchButton.setEnabled(true);
+		ui.setButtonStatus(true);
 	}
 }

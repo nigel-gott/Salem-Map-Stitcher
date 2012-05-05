@@ -11,7 +11,7 @@ public class SessionMap {
 	private MapStitcher stitcher;
 	private List<SubMap> subMaps;
 
-	private int width, height, type;
+	private int width, height;
 	private int maxX = 0, minX = 0, maxY = 0, minY = 0;
 
 	public SessionMap(MapStitcher stitcher) {
@@ -19,7 +19,7 @@ public class SessionMap {
 		this.subMaps = new ArrayList<SubMap>();
 	}
 
-	public boolean loadImagesFromDirectory(File directory) {
+	public boolean tryLoadTilesFrom(File directory) {
 		if (directory.listFiles().length == 0) {
 			// Sometimes sessions have no maps, we just ignore them.
 			return false;
