@@ -13,21 +13,59 @@ public class MapStitcher{
 
 	public void stitchMaps(File mapDirectory){
 		File[] sessionDirectories = FileManager.getSessionDirectories(mapDirectory);
+		List<SessionMap> sessionMaps = constructSessionMaps(sessionDirectories);
+
+		logger.log("Stitching sessions...");
+		List<BufferedImage> stitchedMaps = stitchSessionMaps(sessionMaps);
+		logger.log("Stitched sessions.");
+		writeStitchedMaps(stitchedMaps, mapDirectory);
+	}
+	
+	private List<SessionMap> constructSessionMaps(File[] sessionDirectories){
 		List<SessionMap> sessionMaps = new ArrayList<SessionMap>();
 
 		for (File sessionFolder : sessionDirectories) {
 			SessionMap sessionMap = new SessionMap();
 
 			if (sessionMap.tryLoadTilesFrom(sessionFolder)) {
-				logger.log("Loaded session tiles from " + sessionFolder.getName());
 				sessionMaps.add(sessionMap);
 			}
 		}
+		
+		logger.log("Loaded session tiles from " + sessionMaps.size() + " sessions!");
+		
+		return sessionMaps;
+	}
 
-		logger.log("Stitching sessions...");
-		List<BufferedImage> stitchedMaps = mergeSessionMaps(sessionMaps);
-		logger.log("Stitched sessions.");
+	private List<BufferedImage> stitchSessionMaps(List<SessionMap> maps) {
+		List<BufferedImage> fullyStitchedMaps = new ArrayList<BufferedImage>();
 
+		SessionMap sessionMap = maps.remove(0);
+		boolean stitchedAtLeastOne;
+
+		do {
+			stitchedAtLeastOne = false;
+			for (int i = 0; i < maps.size(); i++) {
+				if (sessionMap.tryStitchWith(maps.get(i))) {
+					logger.log("Stitched two sessions," + maps.size() +" to go!");
+					stitchedAtLeastOne = true;
+					maps.remove(i);
+					i--;
+				}
+			}
+		} while (stitchedAtLeastOne && maps.size() > 1);
+		
+
+		fullyStitchedMaps.add(sessionMap.generateStitchedMap());
+		
+		if (!maps.isEmpty()) {
+			fullyStitchedMaps.addAll(stitchSessionMaps(maps));
+		}
+
+		return fullyStitchedMaps;
+	}
+	
+	private void writeStitchedMaps(List<BufferedImage> stitchedMaps, File mapDirectory){
 		for (int i = 0; i < stitchedMaps.size(); i++) {
 			String imageName = "StitchedMap" + i;
 			if(FileManager.tryWriteImage(mapDirectory, stitchedMaps.get(i), imageName)){
@@ -37,33 +75,5 @@ public class MapStitcher{
 			}
 			
 		}
-	}
-
-	private List<BufferedImage> mergeSessionMaps(List<SessionMap> maps) {
-		List<BufferedImage> fullyStitchedMaps = new ArrayList<BufferedImage>();
-
-		SessionMap sessionMap = maps.remove(0);
-		boolean stitchedAtLeastOne;
-
-		do {
-			stitchedAtLeastOne = false;
-			for (int i = 0; i < maps.size(); i++) {
-				logger.log("Attempting to stitch two sessions...");
-				if (sessionMap.tryMergeWith(maps.get(i))) {
-					logger.log("Succeeded!");
-					stitchedAtLeastOne = true;
-					maps.remove(i--);
-				}
-			}
-		} while (stitchedAtLeastOne && maps.size() > 1);
-		
-
-		fullyStitchedMaps.add(sessionMap.generateStitchedMap());
-		
-		if (!maps.isEmpty()) {
-			fullyStitchedMaps.addAll(mergeSessionMaps(maps));
-		}
-
-		return fullyStitchedMaps;
 	}
 }
