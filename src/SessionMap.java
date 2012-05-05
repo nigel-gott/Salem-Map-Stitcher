@@ -8,14 +8,12 @@ import java.util.regex.Pattern;
 
 public class SessionMap {
 
-	private MapStitcher stitcher;
 	private List<SubMap> subMaps;
 
 	private int width, height;
 	private int maxX = 0, minX = 0, maxY = 0, minY = 0;
 
-	public SessionMap(MapStitcher stitcher) {
-		this.stitcher = stitcher;
+	public SessionMap() {
 		this.subMaps = new ArrayList<SubMap>();
 	}
 
@@ -35,11 +33,9 @@ public class SessionMap {
 				if (subMap.setupSubMap()) {
 					addSubMap(subMap);
 				} else {
-					stitcher.publishToLog("Discarded " + mapImage.getAbsolutePath() + ".");
 					return false;
 				}
 			} catch (Exception e) {
-				stitcher.publishToLog("Encountered an invalid image name: " + mapImage.getName() + ".");
 				return false;
 			}
 		}
@@ -78,7 +74,6 @@ public class SessionMap {
 		for (SubMap map1 : subMaps) {
 			for (SubMap map2 : sessionMap.subMaps) {
 				if (map1.equals(map2)) {
-					stitcher.publishToLog("Hello!");
 					mergeWith(sessionMap, map1, map2);
 					return true;
 				}

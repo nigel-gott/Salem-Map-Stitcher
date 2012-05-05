@@ -10,12 +10,12 @@ public class FileManager {
 	private static final String HOME_DIRECTORY = System.getProperty("user.home");
 	private static final String DEFAULT_MAPS_DIRECTORY = HOME_DIRECTORY + "\\Salem\\map";
 
-	private LogManager logManager;
+	private Logger logger;
 	private File mapDirectory;
 	private boolean mapDirectoryFound;
 
-	public FileManager(LogManager logManager) {
-		this.logManager = logManager;
+	public FileManager(Logger logger) {
+		this.logger = logger;
 		mapDirectoryFound = false;
 	}
 
@@ -26,10 +26,10 @@ public class FileManager {
 
 			setMapDirectory(mapDirectoryPath.toFile());
 
-			logManager.append("Automatically found Salems map directory.");
+			logger.log("Automatically found Salems map directory.");
 			return mapDirectoryPath.toString();
 		} catch (Exception e) {
-			logManager.append("Failed to automatically find Salems map directory.");
+			logger.log("Failed to automatically find Salems map directory.");
 			return "Select your Salem map directory.";
 		}
 	}

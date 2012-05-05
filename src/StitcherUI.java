@@ -14,7 +14,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial")
-public class StitcherUI extends JPanel implements ActionListener {
+public class StitcherUI extends JPanel implements ActionListener, Logger {
 
 	private JTextArea logArea;
 	private JTextField directoryField;
@@ -22,7 +22,6 @@ public class StitcherUI extends JPanel implements ActionListener {
 	private JButton stitchButton;
 
 	private FileManager fileManager;
-	private LogManager logManager;
 
 	public StitcherUI() {
 		super(new BorderLayout());
@@ -30,8 +29,7 @@ public class StitcherUI extends JPanel implements ActionListener {
 
 		createLogArea();
 
-		logManager = new LogManager(logArea);
-		fileManager = new FileManager(logManager);
+		fileManager = new FileManager(this);
 
 		createStitchButton();
 		createDirectoryPanel();
@@ -73,9 +71,9 @@ public class StitcherUI extends JPanel implements ActionListener {
 		if (event.getSource() == stitchButton) {
 			if (fileManager.hasFoundMapDirectory()) {
 				setButtonStatus(false);
-				(new MapStitcher(fileManager, logManager, this)).execute();
+				(new MapStitcherWorker(fileManager, this)).execute();
 			} else {
-				logManager.append("Error saving to the selected map directory.");
+				log("Error saving to the selected map directory.");
 			}
 		} else if (event.getSource() == directoryButton) {
 			final JFileChooser fc = new JFileChooser();
@@ -94,6 +92,10 @@ public class StitcherUI extends JPanel implements ActionListener {
 	protected void setButtonStatus(boolean value) {
 		stitchButton.setEnabled(value);
 		directoryButton.setEnabled(value);
+	}
+	
+	public void log(String line){
+		logArea.append(line + "\n");
 	}
 
 	public static void createAndShowGUI() {
