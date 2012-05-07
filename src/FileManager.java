@@ -53,11 +53,13 @@ public class FileManager {
 
 	public static boolean tryWriteImage(File directory, BufferedImage image, String name) {
 		String imageName = directory.getAbsolutePath() + "\\" + name + ".png";
-
+		System.out.println(imageName);
 		try {
 			ImageIO.write(image, "png", new File(imageName));
 			return true;
 		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
 			return false;
 		}
 	}
